@@ -52,7 +52,7 @@ editor = Agent(
 )
 
 # ============================================
-# THESE ARE THE FUNCTIONS THAT app.py IMPORTS
+# THESE ARE THE 3 FUNCTIONS THAT app.py IMPORTS
 # ============================================
 
 def research_topic(topic: str) -> str:
