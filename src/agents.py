@@ -1,4 +1,4 @@
-from src.llm import bedrock
+from llm import bedrock
 
 class Agent:
     """Base Agent Class"""
