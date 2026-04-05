@@ -1,36 +1,17 @@
 import boto3
 import json
-import streamlit as st
+from dotenv import load_dotenv
 import os
+
+load_dotenv()
 
 class BedrockClient:
     def __init__(self):
-        # Get AWS credentials from Streamlit secrets or environment
-        try:
-            # Try Streamlit Cloud secrets first
-            aws_key = st.secrets["AWS_ACCESS_KEY_ID"]
-            aws_secret = st.secrets["AWS_SECRET_ACCESS_KEY"]
-            region = st.secrets.get("AWS_DEFAULT_REGION", "us-east-1")
-        except Exception as e:
-            # Fallback to environment variables
-            aws_key = os.getenv('AWS_ACCESS_KEY_ID')
-            aws_secret = os.getenv('AWS_SECRET_ACCESS_KEY')
-            region = os.getenv('AWS_DEFAULT_REGION', 'us-east-1')
-            
-            # If still empty, raise error
-            if not aws_key or not aws_secret:
-                raise ValueError(
-                    "AWS credentials not found! "
-                    "Please add them to GitHub Secrets: "
-                    "AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_DEFAULT_REGION"
-                )
-        
-        # Create Bedrock client with explicit region
         self.client = boto3.client(
             'bedrock-runtime',
-            region_name=region,
-            aws_access_key_id=aws_key,
-            aws_secret_access_key=aws_secret
+            region_name=os.getenv('AWS_DEFAULT_REGION'),
+            aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
+            aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY')
         )
     
     def generate(self, prompt: str, system_prompt: str = "") -> str:

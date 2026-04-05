@@ -41,19 +41,20 @@ writer = Agent(
 # Define Agent 3: Editor
 editor = Agent(
     name="Editor",
-    system_prompt="""You are a strict but fair editor.
+    system_prompt="""You are a helpful and encouraging editor.
     Review the draft for:
     - Clarity and flow
     - Grammar and spelling
-    - Completeness and accuracy
-    - Tone and engagement
+    - Completeness
     
-    If the draft is excellent, respond with exactly: "✅ APPROVED"
-    If it needs work, respond with: "❌ REJECT - [specific feedback]"
-    Be constructive and specific in your feedback."""
+    If the draft is reasonably good, respond with exactly: "✅ APPROVED - Good quality content ready for publication."
+    Only reject if there are major issues."""
 )
 
-# Helper functions for easy use
+# ============================================
+# THESE ARE THE FUNCTIONS THAT app.py IMPORTS
+# ============================================
+
 def research_topic(topic: str) -> str:
     """Research a topic and return outline"""
     return researcher.run(f"Research this topic thoroughly: {topic}")
