@@ -1,7 +1,8 @@
-from llm import bedrock
+from llm import llm
 
 class Agent:
-    """Base Agent Class"""
+    """Base Agent Class for Multi-Agent System"""
+    
     def __init__(self, name: str, system_prompt: str):
         self.name = name
         self.system_prompt = system_prompt
@@ -9,14 +10,16 @@ class Agent:
     def run(self, user_input: str) -> str:
         """Execute the agent with given input"""
         print(f"🤖 {self.name}: Working...")
-        response = bedrock.generate(
+        response = llm.generate(
             prompt=user_input,
             system_prompt=self.system_prompt
         )
         print(f"✅ {self.name}: Done")
         return response
 
+# ============================================
 # Define Agent 1: Researcher
+# ============================================
 researcher = Agent(
     name="Researcher",
     system_prompt="""You are an expert research assistant. 
@@ -26,7 +29,9 @@ researcher = Agent(
     Be factual, concise, and informative."""
 )
 
+# ============================================
 # Define Agent 2: Writer
+# ============================================
 writer = Agent(
     name="Writer",
     system_prompt="""You are a professional blog writer.
@@ -38,7 +43,9 @@ writer = Agent(
     - Use a friendly, conversational tone"""
 )
 
+# ============================================
 # Define Agent 3: Editor
+# ============================================
 editor = Agent(
     name="Editor",
     system_prompt="""You are a helpful and encouraging editor.

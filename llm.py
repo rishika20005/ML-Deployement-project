@@ -1,68 +1,58 @@
-import boto3
-import json
+import google.generativeai as genai
 import streamlit as st
 import os
 
-class BedrockClient:
+class GeminiClient:
+    """Free LLM Client using Google Gemini API"""
+    
     def __init__(self):
-        # Try Streamlit secrets first (for cloud deployment)
+        # Get API key from Streamlit secrets (cloud) or environment (local)
         try:
-            aws_key = st.secrets["AWS_ACCESS_KEY_ID"]
-            aws_secret = st.secrets["AWS_SECRET_ACCESS_KEY"]
-            region = st.secrets["AWS_DEFAULT_REGION"]
+            api_key = st.secrets["GEMINI_API_KEY"]
+            print("✅ Loaded API key from Streamlit secrets")
         except Exception as e:
-            # Fallback to .env (for local testing)
-            from dotenv import load_dotenv
-            load_dotenv()
-            aws_key = os.getenv('AWS_ACCESS_KEY_ID')
-            aws_secret = os.getenv('AWS_SECRET_ACCESS_KEY')
-            region = os.getenv('AWS_DEFAULT_REGION', 'us-east-1')
-            
-            # If still empty, raise error
-            if not aws_key or not aws_secret:
-                raise ValueError(
-                    "AWS credentials not found! "
-                    "Please add them to GitHub Secrets: "
-                    "AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_DEFAULT_REGION"
-                )
+            # Fallback to environment variable for local testing
+            api_key = os.getenv("GEMINI_API_KEY")
+            print("🔄 Loaded API key from environment variable")
         
-        # Create Bedrock client
-        self.client = boto3.client(
-            'bedrock-runtime',
-            region_name=region,
-            aws_access_key_id=aws_key,
-            aws_secret_access_key=aws_secret
-        )
+        if not api_key:
+            raise ValueError(
+                "❌ GEMINI_API_KEY not found!\n"
+                "Please add it to GitHub Secrets or create a .env file"
+            )
+        
+        # Configure Gemini
+        genai.configure(api_key=api_key)
+        self.model = genai.GenerativeModel("gemini-1.5-flash")
+        print("🤖 Gemini client initialized successfully")
     
     def generate(self, prompt: str, system_prompt: str = "") -> str:
-        """Generate text using Claude 3 Haiku"""
+        """Generate text using Google Gemini"""
         
-        # Build the full prompt
-        if system_prompt:
-            full_prompt = f"{system_prompt}\n\nUser: {prompt}\nAssistant:"
-        else:
-            full_prompt = prompt
+        try:
+            # Build full prompt with system instruction
+            if system_prompt:
+                full_prompt = f"{system_prompt}\n\nUser: {prompt}\nAssistant:"
+            else:
+                full_prompt = prompt
+            
+            # Call Gemini API
+            response = self.model.generate_content(
+                full_prompt,
+                generation_config=genai.types.GenerationConfig(
+                    max_output_tokens=1000,
+                    temperature=0.7,
+                    top_p=0.9
+                )
+            )
+            
+            return response.text
         
-        # Create request body
-        body = json.dumps({
-            "anthropic_version": "bedrock-2023-05-31",
-            "max_tokens": 1000,
-            "messages": [
-                {"role": "user", "content": full_prompt}
-            ]
-        })
-        
-        # Call Bedrock
-        response = self.client.invoke_model(
-            modelId='anthropic.claude-3-haiku-20240307-v1:0',
-            body=body
-        )
-        
-        # Parse response
-        result = json.loads(response['body'].read())
-        return result['content'][0]['text']
+        except Exception as e:
+            print(f"❌ Error generating content: {e}")
+            return f"Error: {str(e)}"
 
 # ============================================
 # Create global instance (this is what agents.py imports)
 # ============================================
-bedrock = BedrockClient()
+llm = GeminiClient()

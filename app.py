@@ -1,93 +1,151 @@
 import streamlit as st
-from agents import research_topic , write_blog_post , edit_content
+from agents import research_topic, write_blog_post, edit_content
 
-# Page configuration
+# ============================================
+# Page Configuration
+# ============================================
 st.set_page_config(
-    page_title="🤖 Multi-Agent Workflow",
+    page_title="AutoScribe - AI Content Generator",
     page_icon="🤖",
     layout="wide"
 )
 
-# Title
-st.title("🤖 Autonomous Multi-Agent Workflow")
-st.markdown("### AI-Powered Business Process Automation")
+# ============================================
+# Title & Header
+# ============================================
+st.title("🤖 AutoScribe")
+st.subheader("Multi-Agent AI Content Generation System")
 st.markdown("---")
 
-# Sidebar
+# ============================================
+# Sidebar - Project Info
+# ============================================
 with st.sidebar:
-    st.header("⚙️ Configuration")
-    st.info("This system uses 3 AI agents working together:\n\n1. 🔍 **Researcher** - Gathers information\n2. ✍️ **Writer** - Creates content\n3. 🧐 **Editor** - Reviews and approves")
+    st.header("ℹ️ About AutoScribe")
+    st.write("""
+    **AutoScribe** is a cloud-native, multi-agent AI system that automates content research, writing, and editing.
+    
+    **Workflow:**
+    1. 🤖 Researcher → Gathers facts & creates outline
+    2. 🤖 Writer → Composes full article
+    3. 🤖 Editor → Reviews & approves
+    
+    **Tech Stack:**
+    - Python 3.11
+    - Google Gemini API (Free)
+    - Streamlit Cloud
+    - Git/GitHub
+    """)
+    
     st.markdown("---")
-    st.caption("Built with AWS Bedrock & Streamlit")
+    st.write("**Developed by:** Rishika Ravi")
+    st.write("**Internship:** IBM")
+    st.write("**Roll No:** 22BBCACD457")
 
-# Main input
-st.header("📝 Create a Blog Post")
+# ============================================
+# Main Content Area
+# ============================================
+
+# Topic Input
+st.header("📝 Generate Your Article")
 topic = st.text_input(
-    "Enter your blog topic:",
-    placeholder="e.g., The Future of Renewable Energy",
-    value="The Impact of AI on Healthcare"
+    "Enter your topic:",
+    placeholder="e.g., The Future of Artificial Intelligence in Healthcare",
+    help="Enter a clear, specific topic for best results"
 )
 
-# Workflow execution
-if st.button("🚀 Start Multi-Agent Workflow", type="primary", use_container_width=True):
-    if not topic.strip():
-        st.error("Please enter a topic!")
+# Generate Button
+if st.button("🚀 Start Multi-Agent Workflow", type="primary"):
+    if not topic:
+        st.warning("⚠️ Please enter a topic first!")
     else:
-        with st.spinner("🤖 Agents are collaborating..."):
-            
-            # Step 1: Research
-            st.subheader("🔍 Step 1: Research Phase")
-            with st.status("Researcher is gathering information...", expanded=True) as status:
-                outline = research_topic(topic)
-                st.markdown(outline)
-                status.update(label="✅ Research complete!", state="complete")
-            
-            # Step 2: Write
-            st.subheader("✍️ Step 2: Writing Phase")
-            with st.status("Writer is creating content...", expanded=True) as status:
-                draft = write_blog_post(outline)
-                st.markdown(draft)
-                status.update(label="✅ Draft complete!", state="complete")
-            
-            # Step 3: Edit
-            st.subheader("🧐 Step 3: Editing Phase")
-            with st.status("Editor is reviewing...", expanded=True) as status:
-                review = edit_content(draft)
-                st.markdown(review)
-                
-                if "✅ APPROVED" in review:
-                    status.update(label="✅ Approved by Editor!", state="complete")
-                else:
-                    status.update(label="⚠️ Revisions suggested", state="running")
-            
-            # ==========================================
-            # FINAL RESULT & DOWNLOAD BUTTON (ALWAYS SHOWS)
-            # ==========================================
+        # Create containers for each agent's output
+        research_container = st.container()
+        writer_container = st.container()
+        editor_container = st.container()
+        final_container = st.container()
+        
+        # ============================================
+        # Agent 1: Researcher
+        # ============================================
+        with research_container:
+            st.subheader("🤖 Step 1: Researcher Agent")
+            with st.spinner("Researching topic and gathering facts..."):
+                research_output = research_topic(topic)
+                st.success("✅ Research Complete!")
+                st.markdown(research_output)
+        
+        # ============================================
+        # Agent 2: Writer
+        # ============================================
+        with writer_container:
+            st.subheader("🤖 Step 2: Writer Agent")
+            with st.spinner("Writing article based on research..."):
+                writer_output = write_blog_post(research_output)
+                st.success("✅ Writing Complete!")
+                st.markdown(writer_output)
+        
+        # ============================================
+        # Agent 3: Editor
+        # ============================================
+        with editor_container:
+            st.subheader("🤖 Step 3: Editor Agent")
+            with st.spinner("Reviewing and editing content..."):
+                editor_output = edit_content(writer_output)
+                st.success("✅ Editing Complete!")
+                st.markdown(editor_output)
+        
+        # ============================================
+        # Final Output + Download
+        # ============================================
+        with final_container:
             st.markdown("---")
-            if "✅ APPROVED" in review:
-                st.balloons()
-                st.success("🎉 Article Complete and Approved!")
-            else:
-                st.warning("⚠️ Editor suggested revisions (see Step 3 above)")
-                st.info("💡 You can still download the draft below!")
+            st.subheader("🎉 Final Article")
             
-            # DOWNLOAD BUTTON (Outside the if/else block)
-            st.download_button(
-                label="📥 Download Article",
-                data=draft,
-                file_name=f"{topic.replace(' ', '_')}.md",
-                mime="text/markdown",
-                use_container_width=True
-            )
-            # ==========================================
+            # Combine all outputs for download
+            full_article = f"""
+AUTOSCRIBE - AI GENERATED ARTICLE
+==================================
 
+Topic: {topic}
+
+---
+
+RESEARCH OUTPUT:
+{research_output}
+
+---
+
+WRITTEN ARTICLE:
+{writer_output}
+
+---
+
+EDITOR REVIEW:
+{editor_output}
+"""
+            
+            st.markdown(writer_output)
+            
+            # Download Button
+            st.download_button(
+                label="📥 Download Article (.txt)",
+                data=full_article,
+                file_name=f"autoscribe_{topic.replace(' ', '_')[:30]}.txt",
+                mime="text/plain",
+                type="primary"
+            )
+            
+            st.success("✅ Article generation complete! Download or copy your content.")
+
+# ============================================
 # Footer
+# ============================================
 st.markdown("---")
-st.markdown(
-    """
-    <div style='text-align: center; color: gray;'>
-        <p>Final Year Project | Multi-Agent AI System | Powered by AWS Bedrock</p>
-    </div>
-    """,
-    unsafe_allow_html=True
-)
+st.markdown("""
+<div style='text-align: center; color: gray;'>
+    <p><b>AutoScribe</b> | Multi-Agent AI Content Generation System</p>
+    <p>Developed with ❤️ using Python, Gemini API, and Streamlit</p>
+    <p>GitHub: <a href='https://github.com/rishika2005/ML-Deployement-project'>View Repository</a></p>
+</div>
+""", unsafe_allow_html=True)
