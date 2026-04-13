@@ -18,13 +18,20 @@ class GeminiClient:
         if not api_key:
             raise ValueError(
                 "❌ GEMINI_API_KEY not found!\n"
-                "Please add it to GitHub Secrets or create a .env file"
+                "Please add it to Streamlit Secrets or create a .env file"
             )
         
         # Configure Gemini
         genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel("gemini-1.5-flash")
-        print("🤖 Gemini client initialized successfully")
+        
+        # Use correct model name
+        try:
+            self.model = genai.GenerativeModel("gemini-pro")
+            print("🤖 Gemini client initialized with gemini-pro")
+        except Exception as e:
+            # Fallback to alternative model
+            print(f"⚠️ Using alternative model: {e}")
+            self.model = genai.GenerativeModel("models/gemini-pro")
     
     def generate(self, prompt: str, system_prompt: str = "") -> str:
         """Generate text using Google Gemini"""
@@ -49,10 +56,22 @@ class GeminiClient:
             return response.text
         
         except Exception as e:
-            print(f"❌ Error generating content: {e}")
-            return f"Error: {str(e)}"
+            error_msg = str(e)
+            print(f"❌ Error generating content: {error_msg}")
+            
+            # If gemini-pro fails, try with explicit model path
+            if "not found" in error_msg.lower():
+                try:
+                    # Try alternative model
+                    alt_model = genai.GenerativeModel("gemini-1.5-flash-latest")
+                    response = alt_model.generate_content(full_prompt)
+                    return response.text
+                except:
+                    return f"Error: Model not available. Please check your API key and model access."
+            
+            return f"Error: {error_msg}"
 
 # ============================================
-# Create global instance (this is what agents.py imports)
+# Create global instance
 # ============================================
 llm = GeminiClient()
