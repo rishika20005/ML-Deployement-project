@@ -9,29 +9,54 @@ class GeminiClient:
         # Get API key from Streamlit secrets (cloud) or environment (local)
         try:
             api_key = st.secrets["GEMINI_API_KEY"]
-            print("✅ Loaded API key from Streamlit secrets")
+            st.success("✅ API key loaded from Streamlit secrets")
         except Exception as e:
             # Fallback to environment variable for local testing
             api_key = os.getenv("GEMINI_API_KEY")
-            print("🔄 Loaded API key from environment variable")
+            st.warning("⚠️ Using API key from environment variable")
         
         if not api_key:
+            st.error("❌ GEMINI_API_KEY not found!")
             raise ValueError(
                 "❌ GEMINI_API_KEY not found!\n"
-                "Please add it to Streamlit Secrets or create a .env file"
+                "Please add it to Streamlit Secrets (Manage App → Settings → Secrets)\n"
+                "Format: GEMINI_API_KEY = \"your_key_here\""
             )
         
         # Configure Gemini
-        genai.configure(api_key=api_key)
-        
-        # Use correct model name
         try:
-            self.model = genai.GenerativeModel("gemini-pro")
-            print("🤖 Gemini client initialized with gemini-pro")
+            genai.configure(api_key=api_key)
+            
+            # List available models to debug
+            models = genai.list_models()
+            model_names = [model.name for model in models]
+            
+            # Try different model names in order
+            model_options = [
+                "models/gemini-pro",
+                "gemini-pro",
+                "models/gemini-1.5-flash",
+                "gemini-1.5-flash"
+            ]
+            
+            self.model = None
+            for model_name in model_options:
+                try:
+                    if model_name in model_names or any(model_name in m for m in model_names):
+                        self.model = genai.GenerativeModel(model_name)
+                        st.success(f"🤖 Using model: {model_name}")
+                        break
+                except:
+                    continue
+            
+            # If no model found, use default
+            if self.model is None:
+                self.model = genai.GenerativeModel("gemini-pro")
+                st.info("ℹ️ Using default gemini-pro model")
+                
         except Exception as e:
-            # Fallback to alternative model
-            print(f"⚠️ Using alternative model: {e}")
-            self.model = genai.GenerativeModel("models/gemini-pro")
+            st.error(f"❌ Error configuring Gemini: {str(e)}")
+            raise
     
     def generate(self, prompt: str, system_prompt: str = "") -> str:
         """Generate text using Google Gemini"""
@@ -43,33 +68,36 @@ class GeminiClient:
             else:
                 full_prompt = prompt
             
-            # Call Gemini API
-            response = self.model.generate_content(
-                full_prompt,
-                generation_config=genai.types.GenerationConfig(
-                    max_output_tokens=1000,
-                    temperature=0.7,
-                    top_p=0.9
+            # Call Gemini API with retry logic
+            try:
+                response = self.model.generate_content(
+                    full_prompt,
+                    generation_config=genai.types.GenerationConfig(
+                        max_output_tokens=1000,
+                        temperature=0.7,
+                        top_p=0.9
+                    )
                 )
-            )
-            
-            return response.text
+                return response.text
+            except Exception as api_error:
+                # Try with simpler config if first attempt fails
+                st.warning("⚠️ Retrying with simpler configuration...")
+                response = self.model.generate_content(full_prompt)
+                return response.text
         
         except Exception as e:
             error_msg = str(e)
-            print(f"❌ Error generating content: {error_msg}")
+            st.error(f"❌ Generation error: {error_msg}")
             
-            # If gemini-pro fails, try with explicit model path
-            if "not found" in error_msg.lower():
-                try:
-                    # Try alternative model
-                    alt_model = genai.GenerativeModel("gemini-1.5-flash-latest")
-                    response = alt_model.generate_content(full_prompt)
-                    return response.text
-                except:
-                    return f"Error: Model not available. Please check your API key and model access."
-            
-            return f"Error: {error_msg}"
+            # Helpful error messages
+            if "API_KEY" in error_msg.upper():
+                return "Error: Invalid API key. Please check your Streamlit Secrets."
+            elif "quota" in error_msg.lower():
+                return "Error: API quota exceeded. Please wait a few minutes."
+            elif "model" in error_msg.lower():
+                return "Error: Model not available. Please check API access."
+            else:
+                return f"Error: {error_msg}"
 
 # ============================================
 # Create global instance
