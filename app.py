@@ -38,9 +38,8 @@ with st.sidebar:
     """)
     
     st.markdown("---")
-    st.write("**Developed by:** Rishika Ravi")
+    st.write("**Developed by:** Rishika, Punitha, Navalakshmi, Prarthana")
     st.write("**Internship:** IBM")
-    st.write("**Roll No:** 22BBCACD457")
 
 # ============================================
 # Main Content Area
